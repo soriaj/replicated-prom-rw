@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-patch
+  annotations:
+    kots.io/when: repl{{ ConfigOptionEquals "use_remote_write" "1" }}
+data:
+  patch.yaml: |
+    spec:
+      remoteWrite:
+        - url: https://repl{{ ConfigOption "remote_write_address" }}
+  script.sh: |
+    export KUBECONFIG=/kubeconfig/admin.conf
+    kubectl patch -n monitoring prometheuses.monitoring.coreos.com k8s --type merge --patch "$(cat patch.yaml)"

@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: patch-prometheus
+  name: patch-prometheus
+  annotations:  
+    kots.io/when: repl{{ ConfigOptionEquals "use_remote_write" "1" }}
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels: 
+        app: patch-prometheus
+    spec:
+      volumes:
+      - name: kubeconfig
+        hostPath:
+          path: /etc/kubernetes/
+      - name: patch
+        configMap:
+          name: prometheus-patch
+          defaultMode: 0744
+      containers:
+      - image: bitnami/kubectl
+        name: kubectl
+        securityContext:
+          runAsUser: 0
+        command: ["bash", "script.sh"]
+        workingDir: /patch
+        volumeMounts:
+        - mountPath: /patch
+          name: patch
+        - mountPath: /kubeconfig
+          name: kubeconfig
+        resources: {}
+      restartPolicy: Never
